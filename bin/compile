@@ -46,7 +46,7 @@ done
 while read line; do
   case "$line" in
     s3://*)
-      IFS=', ' read -r -a parts <<< "$line"
+      IFS=',' read -r -a parts <<< "$line"
       echo "-----> Saving $parts[0] to $parts[1]"
       get "$parts[0]" "$parts[1]"
     ;;
