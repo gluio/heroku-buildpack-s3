@@ -46,7 +46,7 @@ while read line; do
   case "$line" in
     s3://*)
       IFS=' > ' read src dest <<< "$line"
-      get "$parts[0]" "$parts[1]"
+      get "$src" "$dest"
     ;;
     *)
       echo "unknown command $line"
