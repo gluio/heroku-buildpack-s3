@@ -11,7 +11,7 @@ get() {
   local url="$1"
   local dest="$2"
   local path="${url:4}"
-  local http_url = "https://s3.amazonaws.com${path}"
+  local http_url="https://s3.amazonaws.com${path}"
 
   if [ -z "${BUILD_AWS_ACCESS_KEY_ID-}"  ]; then
     echo "Need BUILD_AWS_ACCESS_KEY_ID to be set"
