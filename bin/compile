@@ -31,7 +31,8 @@ get() {
   local authorization="AWS ${BUILD_AWS_ACCESS_KEY_ID}:${signature}"
 
   echo "-----> Saving $http_url to $dest"
-  curl -o $dest -s -f -H Date:"${date}" -H Authorization:"${authorization}" $http_url
+  status = $(curl -o $dest -s -w %{http_code} -f -H Date:"${date}" -H Authorization:"${authorization}" $http_url)
+  echo "-----> Completed (status $status)"
 }
 
 cd $build
