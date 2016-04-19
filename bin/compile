@@ -1,0 +1,57 @@
+#!/bin/bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+working=$(pwd)
+mkdir -p "$2"
+build=$(cd "$1/" && pwd)
+cache=$(cd "$2/" && pwd)
+env=$(cd "$3/" && pwd)
+
+get() {
+  local command="$1"
+  local url="$2"
+  local file="${3:--}"
+
+  local path="${url:4}"
+  local dest="${4:--}"
+
+  if [ -z "${BUILD_AWS_ACCESS_KEY_ID-}"  ]; then
+    echo "Need BUILD_AWS_ACCESS_KEY_ID to be set"
+    return 1
+  fi
+
+  if [ -z "${BUILD_AWS_SECRET_ACCESS_KEY-}" ]; then
+    echo "Need BUILD_AWS_SECRET_ACCESS_KEY to be set"
+    return 1
+  fi
+
+  method="GET"
+  local date="$(date -u '+%a, %e %b %Y %H:%M:%S +0000')"
+  local string_to_sign
+  printf -v string_to_sign "%s\n%s\n\n%s\n%s" "GET" "" "$date" "$path"
+  local signature=$(echo -n "$string_to_sign" | openssl sha1 -binary -hmac "${BUILD_AWS_SECRET_ACCESS_KEY}" | openssl base64)
+  local authorization="AWS ${BUILD_AWS_ACCESS_KEY_ID}:${signature}"
+
+  curl -o $file -s -f -H Date:"${date}" -H Authorization:"${authorization}" https://s3.amazonaws.com"${path}"
+}
+
+cd $build
+
+for e in BUILD_AWS_ACCESS_KEY_ID BUILD_AWS_SECRET_ACCESS_KEY; do
+  if [ -f $env/$e ]; then
+    export "$e=$(cat $env/$e)"
+  fi
+done
+
+while read line; do
+  case "$line" in
+    s3://*)
+      IFS=', ' read -r -a parts <<< "$line"
+      echo "-----> Saving $parts[0] to $parts[1]"
+      get "$parts[0]" "$parts[1]"
+    ;;
+    *)
+      echo "unknown command $line"
+    ;;
+  esac
+done < .buildpack-s3-files
